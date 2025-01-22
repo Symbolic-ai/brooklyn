@@ -24,3 +24,7 @@ brooklyn-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+.aider*
+.env
+
+/config/
