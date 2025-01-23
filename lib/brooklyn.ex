@@ -43,7 +43,8 @@ defmodule Brooklyn do
       {:ok, %{status: 200, body: %{"choices" => [%{"message" => message} | _]}}} -> 
         {:ok, %{
           role: message["role"],
-          content: message["content"]
+          content: message["content"],
+          reasoning_content: message["reasoning_content"]
         }}
       error -> 
         {:error, error}
@@ -73,7 +74,8 @@ defmodule Brooklyn do
       {:ok, %{status: 200} = resp} -> 
         {:ok, %{
           role: "assistant",
-          content: resp.body.accumulated_content
+          content: resp.body.accumulated_content,
+          reasoning_content: resp.body.accumulated_reasoning_content
         }}
       error -> 
         {:error, error}

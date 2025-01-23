@@ -27,8 +27,8 @@ defmodule Mix.Tasks.Brooklyn.Test do
         if stream? do
           {provider, model}
           |> Brooklyn.chat_completion(@messages, fn
-            {:ok, content} when is_binary(content) -> 
-              IO.write("#{content}")
+            {:ok, %{content: content, reasoning_content: reasoning}} when is_binary(content) or is_binary(reasoning) -> 
+              IO.write("#{reasoning || content}")
             {:ok, :stop} -> 
               IO.puts("\n--- Stream finished ---")
             other -> 
@@ -44,8 +44,10 @@ defmodule Mix.Tasks.Brooklyn.Test do
           {provider, model}
           |> Brooklyn.chat_completion(@messages)
           |> case do
-            {:ok, %{role: role, content: content}} -> 
-              IO.puts("\nRole: #{role}\nContent: #{content}")
+            {:ok, %{role: role, content: content, reasoning_content: reasoning}} -> 
+              IO.puts("\nRole: #{role}")
+              IO.puts("Content: #{content}")
+              if reasoning && reasoning != "", do: IO.puts("Reasoning: #{reasoning}")
             {:error, reason} -> 
               IO.puts("Error: #{inspect(reason)}")
           end

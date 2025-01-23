@@ -1,5 +1,10 @@
 defmodule Brooklyn.SSEAccumulator do
-  defstruct [:callback, leftover: "", accumulated_content: ""]
+  defstruct [
+    :callback,
+    leftover: "",
+    accumulated_content: "",
+    accumulated_reasoning_content: ""
+  ]
 
   def process_chunk(chunk, leftover) do
     messages = (leftover <> chunk) |> String.split("\n\n", trim: true)
@@ -30,7 +35,17 @@ defmodule Brooklyn.SSEAccumulator do
       {:ok, :done} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
-      {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} -> {:ok, content}
+      {:ok, %{"choices" => [%{"delta" => delta} | _]}} -> 
+        case delta do
+          %{"content" => content, "reasoning_content" => reasoning} -> 
+            {:ok, %{content: content, reasoning_content: reasoning}}
+          %{"content" => content} -> 
+            {:ok, %{content: content, reasoning_content: nil}}
+          %{"reasoning_content" => reasoning} -> 
+            {:ok, %{content: nil, reasoning_content: reasoning}}
+          _ -> 
+            nil
+        end
       {:ok, %{"choices" => [], "usage" => usage}} -> {:ok, {:usage, usage}}
       {:ok, %{"code" => 400}} -> {:error, :prompt_tokens_exceeded}
       {:ok, %{"code" => 429}} -> {:error, :rate_limit}
@@ -48,13 +63,18 @@ defimpl Collectable, for: Brooklyn.SSEAccumulator do
       (%Brooklyn.SSEAccumulator{leftover: leftover, callback: cb, accumulated_content: content} = acc, {:cont, chunk}) ->
         {events, new_leftover} = Brooklyn.SSEAccumulator.process_chunk(chunk, leftover)
 
-        new_content = Enum.reduce(events, content, fn
-          {:ok, content}, acc when is_binary(content) -> acc <> content
+        {new_content, new_reasoning_content} = Enum.reduce(events, {content, acc.accumulated_reasoning_content}, fn
+          {:ok, %{content: content, reasoning_content: nil}}, {c, r} when is_binary(content) -> {c <> content, r}
+          {:ok, %{content: nil, reasoning_content: content}}, {c, r} when is_binary(content) -> {c, r <> content}
           _, acc -> acc
         end)
 
         Enum.each(events, cb)
-        %{acc | leftover: new_leftover, accumulated_content: new_content}
+        %{acc | 
+          leftover: new_leftover, 
+          accumulated_content: new_content,
+          accumulated_reasoning_content: new_reasoning_content
+        }
 
       (acc, :done) ->
         acc
