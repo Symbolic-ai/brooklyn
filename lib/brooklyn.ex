@@ -35,12 +35,19 @@ defmodule Brooklyn do
   end
 
   def chat_completion({%Provider{} = provider, model}, messages) when is_list(messages) do
-    {:ok, 
-      Req.post(chat_completion_url(provider),
-        json: %{messages: messages, model: model} |> set_stream(false),
-        auth: {:bearer, provider.api_key},
-        receive_timeout: :infinity
-      )}
+    case Req.post(chat_completion_url(provider),
+      json: %{messages: messages, model: model} |> set_stream(false),
+      auth: {:bearer, provider.api_key},
+      receive_timeout: :infinity
+    ) do
+      {:ok, %{status: 200, body: %{"choices" => [%{"message" => message} | _]}}} -> 
+        {:ok, %{
+          role: message["role"],
+          content: message["content"]
+        }}
+      error -> 
+        {:error, error}
+    end
   end
 
   @doc """
@@ -55,14 +62,22 @@ defmodule Brooklyn do
   end
 
   def chat_completion({%Provider{} = provider, model}, messages, callback) when is_list(messages) do
-    accumulator = %Brooklyn.SSEAccumulator{callback: &IO.inspect/1}
-    {:ok,
-      Req.post(chat_completion_url(provider),
-        json: %{messages: messages, model: model} |> set_stream(true),
-        auth: {:bearer, provider.api_key},
-        receive_timeout: :infinity,
-        into: accumulator
-      )}
+    accumulator = %Brooklyn.SSEAccumulator{callback: callback}
+    
+    case Req.post(chat_completion_url(provider),
+      json: %{messages: messages, model: model} |> set_stream(true),
+      auth: {:bearer, provider.api_key},
+      receive_timeout: :infinity,
+      into: accumulator
+    ) do
+      {:ok, %{status: 200} = resp} -> 
+        {:ok, %{
+          role: "assistant",
+          content: resp.body.accumulated_content
+        }}
+      error -> 
+        {:error, error}
+    end
   end
 
   # Private helpers
@@ -75,22 +90,5 @@ defmodule Brooklyn do
     request
     |> Map.drop([:stream, "stream"])
     |> Map.put(:stream, value)
-  end
-
-  defp parse(chunk, _provider) do
-    chunk
-    |> String.split("data: ")
-    |> Enum.map(&String.trim/1)
-    |> Enum.map(&decode/1)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.map(&extract_delta/1)
-  end
-
-  defp decode(""), do: nil
-  defp decode("[DONE]"), do: nil
-  defp decode(data), do: Jason.decode!(data)
-
-  defp extract_delta(%{"choices" => [%{"delta" => delta} | _]}) do
-    %{"delta" => delta}
   end
 end

@@ -26,13 +26,28 @@ defmodule Mix.Tasks.Brooklyn.Test do
 
         if stream? do
           {provider, model}
-          |> Brooklyn.chat_completion(@messages, &IO.inspect/1)
+          |> Brooklyn.chat_completion(@messages, fn
+            {:ok, content} when is_binary(content) -> 
+              IO.write("#{content}")
+            {:ok, :stop} -> 
+              IO.puts("\n--- Stream finished ---")
+            other -> 
+              IO.puts("\nEvent: #{inspect(other)}")
+          end)
+          |> case do
+            {:ok, full_message} -> 
+              IO.puts("\nFull message:\n#{inspect(full_message, pretty: true)}")
+            {:error, reason} -> 
+              IO.puts("\nError: #{inspect(reason)}")
+          end
         else
           {provider, model}
           |> Brooklyn.chat_completion(@messages)
           |> case do
-            {:ok, response} -> IO.puts(inspect(response, pretty: true))
-            {:error, reason} -> IO.puts("Error: #{inspect(reason)}")
+            {:ok, %{role: role, content: content}} -> 
+              IO.puts("\nRole: #{role}\nContent: #{content}")
+            {:error, reason} -> 
+              IO.puts("Error: #{inspect(reason)}")
           end
         end
 
