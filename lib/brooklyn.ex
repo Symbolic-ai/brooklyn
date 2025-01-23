@@ -55,18 +55,13 @@ defmodule Brooklyn do
   end
 
   def chat_completion({%Provider{} = provider, model}, messages, callback) when is_list(messages) do
+    accumulator = %Brooklyn.SSEAccumulator{callback: &IO.inspect/1}
     {:ok,
       Req.post(chat_completion_url(provider),
         json: %{messages: messages, model: model} |> set_stream(true),
         auth: {:bearer, provider.api_key},
         receive_timeout: :infinity,
-        into: fn {:data, data}, acc ->
-          data
-          |> parse(provider)
-          |> Enum.each(callback)
-          
-          {:cont, acc}
-        end
+        into: accumulator
       )}
   end
 
@@ -83,15 +78,19 @@ defmodule Brooklyn do
   end
 
   defp parse(chunk, _provider) do
-    # TODO: Make parser provider-specific
     chunk
     |> String.split("data: ")
     |> Enum.map(&String.trim/1)
     |> Enum.map(&decode/1)
     |> Enum.reject(&is_nil/1)
+    |> Enum.map(&extract_delta/1)
   end
 
   defp decode(""), do: nil
   defp decode("[DONE]"), do: nil
   defp decode(data), do: Jason.decode!(data)
+
+  defp extract_delta(%{"choices" => [%{"delta" => delta} | _]}) do
+    %{"delta" => delta}
+  end
 end
