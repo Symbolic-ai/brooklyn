@@ -40,11 +40,12 @@ defmodule Brooklyn do
       auth: {:bearer, provider.api_key},
       receive_timeout: :infinity
     ) do
-      {:ok, %{status: 200, body: %{"choices" => [%{"message" => message} | _]}}} -> 
+      {:ok, %{status: 200, body: %{"choices" => [%{"message" => message} | _], "usage" => usage} = body}} -> 
         {:ok, %{
           role: message["role"],
           content: message["content"],
-          reasoning_content: message["reasoning_content"]
+          reasoning_content: message["reasoning_content"] || "",
+          usage: usage
         }}
       error -> 
         {:error, error}

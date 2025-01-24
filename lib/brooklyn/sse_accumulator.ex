@@ -1,6 +1,7 @@
 defmodule Brooklyn.SSEAccumulator do
   defstruct [
     :callback,
+    :usage,
     leftover: "",
     accumulated_content: "",
     accumulated_reasoning_content: ""
@@ -69,11 +70,17 @@ defimpl Collectable, for: Brooklyn.SSEAccumulator do
           _, acc -> acc
         end)
 
+        new_usage = Enum.reduce(events, acc.usage, fn
+          {:ok, {:usage, usage}}, _acc -> usage
+          _, acc -> acc
+        end)
+
         Enum.each(events, cb)
         %{acc | 
           leftover: new_leftover, 
           accumulated_content: new_content,
-          accumulated_reasoning_content: new_reasoning_content
+          accumulated_reasoning_content: new_reasoning_content,
+          usage: new_usage
         }
 
       (acc, :done) ->

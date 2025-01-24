@@ -35,8 +35,17 @@ defmodule Mix.Tasks.Brooklyn.Test do
               IO.puts("\nEvent: #{inspect(other)}")
           end)
           |> case do
-            {:ok, full_message} -> 
-              IO.puts("\nFull message:\n#{inspect(full_message, pretty: true)}")
+            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage}} -> 
+              IO.puts("\nFull message:")
+              IO.puts("Role: #{role}")
+              IO.puts("Content: #{content}")
+              if reasoning && reasoning != "", do: IO.puts("Reasoning: #{reasoning}")
+              if usage do
+                IO.puts("\nUsage:")
+                IO.puts("  Prompt tokens: #{usage["prompt_tokens"]}")
+                IO.puts("  Completion tokens: #{usage["completion_tokens"]}")
+                IO.puts("  Total tokens: #{usage["total_tokens"]}")
+              end
             {:error, reason} -> 
               IO.puts("\nError: #{inspect(reason)}")
           end
@@ -44,10 +53,16 @@ defmodule Mix.Tasks.Brooklyn.Test do
           {provider, model}
           |> Brooklyn.chat_completion(@messages)
           |> case do
-            {:ok, %{role: role, content: content, reasoning_content: reasoning}} -> 
+            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage}} -> 
               IO.puts("\nRole: #{role}")
               IO.puts("Content: #{content}")
               if reasoning && reasoning != "", do: IO.puts("Reasoning: #{reasoning}")
+              if usage do
+                IO.puts("\nUsage:")
+                IO.puts("  Prompt tokens: #{usage["prompt_tokens"]}")
+                IO.puts("  Completion tokens: #{usage["completion_tokens"]}")
+                IO.puts("  Total tokens: #{usage["total_tokens"]}")
+              end
             {:error, reason} -> 
               IO.puts("Error: #{inspect(reason)}")
           end
