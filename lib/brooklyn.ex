@@ -76,7 +76,8 @@ defmodule Brooklyn do
         {:ok, %{
           role: "assistant",
           content: resp.body.accumulated_content,
-          reasoning_content: resp.body.accumulated_reasoning_content
+          reasoning_content: resp.body.accumulated_reasoning_content,
+          usage: resp.body.usage
         }}
       error -> 
         {:error, error}
