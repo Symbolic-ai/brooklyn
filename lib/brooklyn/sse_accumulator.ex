@@ -8,11 +8,14 @@ defmodule Brooklyn.SSEAccumulator do
   ]
 
   def process_chunk(chunk, leftover) do
+    IO.puts(chunk)
     messages = (leftover <> chunk) |> String.split("\n\n", trim: true)
     
     parsed = Enum.map(messages, fn message ->
       case String.trim(message) do
-        "data: [DONE]" -> {:ok, :done}
+        "data: [DONE]" -> 
+          dbg(done: message)
+          {:ok, :done}
         "data: " <> data ->
           case Jason.decode(data) do
             {:ok, parsed} -> {:ok, parsed}
@@ -34,6 +37,7 @@ defmodule Brooklyn.SSEAccumulator do
     events
     |> Enum.map(fn
       {:ok, :done} -> {:ok, :stop}
+      {:ok, %{"choices" => [], "usage" => usage}} -> {:ok, {:usage, usage}} |> dbg()
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
       {:ok, %{"choices" => [%{"delta" => delta} | _]}} -> 
@@ -47,11 +51,12 @@ defmodule Brooklyn.SSEAccumulator do
           _ -> 
             nil
         end
-      {:ok, %{"choices" => [], "usage" => usage}} -> {:ok, {:usage, usage}}
       {:ok, %{"code" => 400}} -> {:error, :prompt_tokens_exceeded}
       {:ok, %{"code" => 429}} -> {:error, :rate_limit}
       {:ok, unknown} -> {:error, {:unknown_response, unknown}}
-      {:error, _} -> nil
+      {:error, msg} -> 
+        dbg(err: msg)
+        nil
     end)
     |> Enum.reject(&is_nil/1)
   end
