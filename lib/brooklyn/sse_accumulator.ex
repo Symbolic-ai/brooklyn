@@ -37,7 +37,7 @@ defmodule Brooklyn.SSEAccumulator do
     events
     |> Enum.map(fn
       {:ok, :done} -> {:ok, :stop}
-      {:ok, %{"choices" => [], "usage" => usage}} -> {:ok, {:usage, usage}} |> dbg()
+      {:ok, %{"usage" => usage}} -> {:ok, {:usage, usage}} |> dbg()
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
       {:ok, %{"choices" => [%{"delta" => delta} | _]}} -> 
