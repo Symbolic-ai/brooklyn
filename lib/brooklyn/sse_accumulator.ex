@@ -71,8 +71,8 @@ defimpl Collectable, for: Brooklyn.SSEAccumulator do
         end)
 
         new_usage = Enum.reduce(events, acc.usage, fn
-          {:ok, {:usage, usage}}, _acc -> usage
-          _, acc -> acc
+          {:ok, {:usage, usage}}, _ -> usage
+          _, curr_usage -> curr_usage
         end)
 
         Enum.each(events, cb)
