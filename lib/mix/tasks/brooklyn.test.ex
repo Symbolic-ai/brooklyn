@@ -35,7 +35,8 @@ defmodule Mix.Tasks.Brooklyn.Test do
               IO.puts("\nEvent: #{inspect(other)}")
           end)
           |> case do
-            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage}} -> 
+            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage} = msg} -> 
+              dbg(msg)
               IO.puts("\nFull message:")
               IO.puts("Role: #{role}")
               IO.puts("Content: #{content}")
@@ -53,7 +54,8 @@ defmodule Mix.Tasks.Brooklyn.Test do
           {provider, model}
           |> Brooklyn.chat_completion(@messages)
           |> case do
-            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage}} -> 
+            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage} = msg} -> 
+              dbg(msg)
               IO.puts("\nRole: #{role}")
               IO.puts("Content: #{content}")
               if reasoning && reasoning != "", do: IO.puts("Reasoning: #{reasoning}")
