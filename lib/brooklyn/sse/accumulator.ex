@@ -1,4 +1,4 @@
-defmodule Brooklyn.SSEAccumulator do
+defmodule Brooklyn.SSE.Accumulator do
   defstruct [
     :callback,
     :usage,

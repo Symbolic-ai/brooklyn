@@ -64,7 +64,7 @@ defmodule Brooklyn do
   end
 
   def chat_completion({%Provider{} = provider, model}, messages, callback) when is_list(messages) do
-    accumulator = %Brooklyn.SSEAccumulator{callback: callback}
+    accumulator = %Brooklyn.SSE.Accumulator{callback: callback}
     
     case Req.post(chat_completion_url(provider),
       json: %{messages: messages, model: model} |> set_stream(true),
