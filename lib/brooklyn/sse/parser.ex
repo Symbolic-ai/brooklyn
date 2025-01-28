@@ -16,10 +16,13 @@ defmodule Brooklyn.SSE.Parser do
   """
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
   def parse_chunk(chunk, leftover) do
-    messages = (leftover <> chunk) |> String.split("\n\n", trim: true)
-    
-    {parsed, last_message} = parse_messages(messages)
-    {parsed, last_message}
+    full_chunk = leftover <> chunk
+    case String.split(full_chunk, "\n\n", parts: 2) do
+      [single] -> {[], single}
+      [message, rest] ->
+        {more_events, final_leftover} = parse_chunk(rest, "")
+        {[parse_message(message) | more_events], final_leftover}
+    end
   end
 
   @doc """
@@ -69,16 +72,4 @@ defmodule Brooklyn.SSE.Parser do
 
   # Private Functions
 
-  defp parse_messages(messages) do
-    case List.last(messages) do
-      nil -> 
-        {[], ""}
-      last_message ->
-        if complete_message?(last_message) do
-          {Enum.map(messages, &parse_message/1), ""}
-        else
-          {messages |> Enum.drop(-1) |> Enum.map(&parse_message/1), last_message}
-        end
-    end
-  end
 end
