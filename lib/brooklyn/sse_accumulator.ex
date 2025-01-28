@@ -9,27 +9,8 @@ defmodule Brooklyn.SSEAccumulator do
   ]
 
   def process_chunk(chunk, leftover) do
-    messages = (leftover <> chunk) |> String.split("\n\n", trim: true)
-    
-    parsed = Enum.map(messages, fn message ->
-      case String.trim(message) do
-        "data: [DONE]" -> 
-          {:ok, :done}
-        "data: " <> data ->
-          case Jason.decode(data) do
-            {:ok, parsed} -> {:ok, parsed}
-            _ -> {:error, message}
-          end
-        _ -> {:error, message}
-      end
-    end)
-    
-    case List.last(parsed) do
-      {:error, last_message} -> 
-        {parsed |> Enum.drop(-1) |> process_events(), last_message}
-      _ -> 
-        {parsed |> process_events(), ""}
-    end
+    {parsed, new_leftover} = Brooklyn.SSE.Parser.parse_chunk(chunk, leftover)
+    {process_events(parsed), new_leftover}
   end
 
   defp process_events(events) do
