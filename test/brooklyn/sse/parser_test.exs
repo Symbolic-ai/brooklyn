@@ -44,15 +44,15 @@ defmodule Brooklyn.SSE.ParserTest do
 
     test "handles incomplete messages" do
       chunk1 = "data: {\"choices\":[{\"delta\":"
-      {events1, leftover1} = Parser.parse_chunk(chunk1, "")
+      {events1, leftover1, _thinking} = Parser.parse_chunk(chunk1, "")
       assert events1 == []
       assert leftover1 == chunk1
 
       chunk2 = "{\"content\":\"Hello\"}}]}\n\n"
-      {events2, leftover2} = Parser.parse_chunk(chunk2, leftover1)
+      {events2, leftover2, _thinking} = Parser.parse_chunk(chunk2, leftover1)
       assert leftover2 == ""
       assert events2 == [
-        {:ok, %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}}
+        {:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false}
       ]
     end
 

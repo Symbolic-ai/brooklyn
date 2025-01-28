@@ -34,12 +34,22 @@ defmodule Brooklyn.SSE.Parser do
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
   def parse_chunk(chunk, leftover, in_thinking_mode \\ false) do
     full_chunk = leftover <> chunk
-    case String.split(full_chunk, "\n\n", parts: 2) do
-      [single] -> {[], single}
-      [message, rest] ->
-        {result, new_thinking} = parse_message(message, in_thinking_mode)
-        {more_events, final_leftover} = parse_chunk(rest, "", new_thinking)
-        {[result], final_leftover}
+    messages = String.split(full_chunk, "\n\n")
+    
+    # First pass: parse all messages
+    {events, final_thinking} = Enum.reduce(messages, {[], in_thinking_mode}, fn message, {acc, thinking} ->
+      {result, new_thinking} = parse_message(message, thinking)
+      {[result | acc], new_thinking}
+    end)
+    events = Enum.reverse(events)
+
+    # Second pass: check last message and handle leftover
+    last_message = List.last(messages)
+    last_result = List.last(events)
+
+    case last_result do
+      {:error, :invalid_message} -> {Enum.drop(events, -1), last_message, final_thinking}
+      _ -> {events, "", final_thinking}
     end
   end
 
