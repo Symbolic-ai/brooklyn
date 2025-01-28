@@ -47,11 +47,11 @@ defmodule Brooklyn.SSE.Parser do
 
     # Second pass: check last message and handle leftover
     last_message = List.last(messages)
-    last_result = List.last(events)
 
-    case last_result do
-      {:error, :invalid_message, _} -> {Enum.drop(events, -1), last_message, final_thinking}
-      _ -> {events, "", final_thinking}
+    # If we have no events but a last message, it's probably incomplete
+    cond do
+      events == [] and last_message != "" -> {[], last_message, in_thinking_mode}
+      true -> {events, "", final_thinking}
     end
   end
 
