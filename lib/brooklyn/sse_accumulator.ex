@@ -21,7 +21,7 @@ defmodule Brooklyn.SSEAccumulator do
         {:ok, {:usage, Brooklyn.Types.Usage.from_map(usage)}}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
-      {:ok, %{"choices" => [%{"delta" => %{"content" => content} = delta} | _]}} -> 
+      {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} -> 
         cond do
           String.contains?(content, "<think>") and String.contains?(content, "</think>") ->
             # Complete think tag in one chunk
@@ -39,7 +39,7 @@ defmodule Brooklyn.SSEAccumulator do
             # Regular content or within think tags - let accumulator decide based on state
             {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}
         end
-      {:ok, %{"choices" => [%{"delta" => delta} | _]}} -> 
+      {:ok, %{"choices" => [%{"delta" => _} | _]}} -> 
         nil
       {:ok, %{"code" => 400}} -> {:error, :prompt_tokens_exceeded}
       {:ok, %{"code" => 429}} -> {:error, :rate_limit}
@@ -92,7 +92,6 @@ end
 
 defimpl Collectable, for: Brooklyn.SSEAccumulator do
   import Brooklyn.SSEAccumulator, only: [
-    process_chunk: 2,
     handle_content_events: 3,
     handle_usage_events: 2
   ]
