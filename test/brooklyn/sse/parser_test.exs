@@ -121,7 +121,7 @@ defmodule Brooklyn.SSE.ParserTest do
       ]
 
       # Process second chunk
-      {events2, leftover2, thinking2} = Parser.parse_chunk(chunk2, leftover1)
+      {events2, leftover2, thinking2} = Parser.parse_chunk(chunk2, leftover1, thinking1)
       assert leftover2 == ""
       assert thinking2 == false
       assert events2 == [

@@ -34,7 +34,9 @@ defmodule Brooklyn.SSE.Parser do
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
   def parse_chunk(chunk, leftover, in_thinking_mode \\ false) do
     full_chunk = leftover <> chunk
-    messages = String.split(full_chunk, "\n\n")
+    messages = full_chunk
+        |> String.split("\n\n")
+        |> Enum.reject(&(String.trim(&1) == ""))
     
     # First pass: parse all messages
     {events, final_thinking} = Enum.reduce(messages, {[], in_thinking_mode}, fn message, {acc, thinking} ->
@@ -44,6 +46,7 @@ defmodule Brooklyn.SSE.Parser do
       end
     end)
     events = Enum.reverse(events)
+    dbg(events)
 
     # Check if last message was an error and use its content as leftover
     case List.last(events) do
@@ -66,7 +69,7 @@ defmodule Brooklyn.SSE.Parser do
       {:ok, %Brooklyn.Types.Delta{content: "Hi", reasoning_content: nil}, false}
 
       iex> Brooklyn.SSE.Parser.parse_message("invalid", false)
-      {:error, :invalid_message}
+      {:error, :invalid_message, "invalid"}
   """
   @spec parse_message(String.t(), boolean()) :: parse_result()
   def parse_message(message, in_thinking_mode) do

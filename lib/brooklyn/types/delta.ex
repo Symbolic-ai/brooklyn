@@ -18,3 +18,4 @@ defmodule Brooklyn.Types.Delta do
     }
   end
 end
+
