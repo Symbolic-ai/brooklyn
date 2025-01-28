@@ -90,8 +90,8 @@ defmodule Brooklyn.SSE.Accumulator do
   end
 end
 
-defimpl Collectable, for: Brooklyn.SSEAccumulator do
-  import Brooklyn.SSEAccumulator, only: [
+defimpl Collectable, for: Brooklyn.SSE.Accumulator do
+  import Brooklyn.SSE.Accumulator, only: [
     handle_content_events: 3,
     handle_usage_events: 2
   ]

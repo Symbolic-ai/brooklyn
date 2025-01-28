@@ -1,7 +1,7 @@
-defmodule Brooklyn.SSEAccumulatorTest do
+defmodule Brooklyn.SSE.AccumulatorTest do
   use ExUnit.Case
 
-  alias Brooklyn.SSEAccumulator
+  alias Brooklyn.SSE.Accumulator
 
   describe "Collectable implementation" do
     test "accumulates simple content with callbacks" do
@@ -15,7 +15,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":20,\"total_tokens\":30}}\n\n"
       ]
 
-      result = Enum.into(chunks, %SSEAccumulator{callback: callback})
+      result = Enum.into(chunks, %Accumulator{callback: callback})
 
       # Assert final accumulator state
       assert result.accumulated_content == "Hello world"
@@ -50,7 +50,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":15,\"completion_tokens\":25,\"total_tokens\":40}}\n\n"
       ]
 
-      result = Enum.into(chunks, %SSEAccumulator{callback: callback})
+      result = Enum.into(chunks, %Accumulator{callback: callback})
 
       # Assert final accumulator state
       assert result.accumulated_content == "Start  end"
@@ -83,7 +83,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":10,\"total_tokens\":15}}\n\n"
       ]
 
-      result = Enum.into(chunks, %SSEAccumulator{callback: callback})
+      result = Enum.into(chunks, %Accumulator{callback: callback})
 
       assert result.accumulated_content == "Before  after"
       assert result.accumulated_reasoning_content == "reasoning"
@@ -107,7 +107,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n"
       ]
 
-      result = Enum.into(chunks, %SSEAccumulator{callback: callback})
+      result = Enum.into(chunks, %Accumulator{callback: callback})
 
       assert result.accumulated_content == "Hello"
       assert result.accumulated_reasoning_content == ""
@@ -126,7 +126,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{}}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":1,\"total_tokens\":6}}\n\n"
       ]
 
-      result1 = Enum.into(chunks1, %SSEAccumulator{callback: callback})
+      result1 = Enum.into(chunks1, %Accumulator{callback: callback})
       assert result1.usage == %{prompt_tokens: 5, completion_tokens: 1, total_tokens: 6}
       
       # Usage in stop message
@@ -135,7 +135,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":1,\"total_tokens\":6}}\n\n"
       ]
 
-      result2 = Enum.into(chunks2, %SSEAccumulator{callback: callback})
+      result2 = Enum.into(chunks2, %Accumulator{callback: callback})
       assert result2.usage == %{prompt_tokens: 5, completion_tokens: 1, total_tokens: 6}
 
       # Multiple usage events (should take last one)
@@ -144,7 +144,7 @@ defmodule Brooklyn.SSEAccumulatorTest do
         "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":2,\"total_tokens\":7}}\n\n"
       ]
 
-      result3 = Enum.into(chunks3, %SSEAccumulator{callback: callback})
+      result3 = Enum.into(chunks3, %Accumulator{callback: callback})
       assert result3.usage == %{prompt_tokens: 5, completion_tokens: 2, total_tokens: 7}
     end
   end
