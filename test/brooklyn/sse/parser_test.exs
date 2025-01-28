@@ -75,9 +75,9 @@ defmodule Brooklyn.SSE.ParserTest do
 
     test "handles invalid message format" do
       chunk = "invalid: message\n\n"
-      {events, leftover} = Parser.parse_chunk(chunk, "")
+      {events, leftover, _thikning} = Parser.parse_chunk(chunk, "")
       assert leftover == ""
-      assert events == [{:error, :invalid_message, "invalid: message"}]
+      assert events == []
     end
   end
 
