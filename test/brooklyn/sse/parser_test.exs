@@ -153,7 +153,7 @@ defmodule Brooklyn.SSE.ParserTest do
     test "parses message with usage" do
       message = "data: {\"usage\": {\"total_tokens\": 10}}"
       assert Parser.parse_message(message, false) ==
-        {:ok, {:usage, %{"total_tokens" => 10}}, false}
+        {:ok, %Brooklyn.Types.Usage{prompt_tokens: nil, completion_tokens: nil, total_tokens: 10}, false}
     end
 
     test "parses [DONE] message" do
