@@ -35,17 +35,17 @@ defmodule Mix.Tasks.Brooklyn.Test do
               IO.puts("\nEvent: #{inspect(other)}")
           end)
           |> case do
-            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage} = msg} -> 
+            {:ok, %Brooklyn.Types.Message{} = msg} -> 
               dbg(msg)
               IO.puts("\nFull message:")
-              IO.puts("Role: #{role}")
-              IO.puts("Content: #{content}")
-              if reasoning && reasoning != "", do: IO.puts("Reasoning: #{reasoning}")
-              if usage do
+              IO.puts("Role: #{msg.role}")
+              IO.puts("Content: #{msg.content}")
+              if msg.reasoning_content && msg.reasoning_content != "", do: IO.puts("Reasoning: #{msg.reasoning_content}")
+              if msg.usage do
                 IO.puts("\nUsage:")
-                IO.puts("  Prompt tokens: #{usage["prompt_tokens"]}")
-                IO.puts("  Completion tokens: #{usage["completion_tokens"]}")
-                IO.puts("  Total tokens: #{usage["total_tokens"]}")
+                IO.puts("  Prompt tokens: #{msg.usage.prompt_tokens}")
+                IO.puts("  Completion tokens: #{msg.usage.completion_tokens}")
+                IO.puts("  Total tokens: #{msg.usage.total_tokens}")
               end
             {:error, reason} -> 
               IO.puts("\nError: #{inspect(reason)}")
@@ -54,16 +54,16 @@ defmodule Mix.Tasks.Brooklyn.Test do
           {provider, model}
           |> Brooklyn.chat_completion(@messages)
           |> case do
-            {:ok, %{role: role, content: content, reasoning_content: reasoning, usage: usage} = msg} -> 
+            {:ok, %Brooklyn.Types.Message{} = msg} -> 
               dbg(msg)
-              IO.puts("\nRole: #{role}")
-              IO.puts("Content: #{content}")
-              if reasoning && reasoning != "", do: IO.puts("Reasoning: #{reasoning}")
-              if usage do
+              IO.puts("\nRole: #{msg.role}")
+              IO.puts("Content: #{msg.content}")
+              if msg.reasoning_content && msg.reasoning_content != "", do: IO.puts("Reasoning: #{msg.reasoning_content}")
+              if msg.usage do
                 IO.puts("\nUsage:")
-                IO.puts("  Prompt tokens: #{usage["prompt_tokens"]}")
-                IO.puts("  Completion tokens: #{usage["completion_tokens"]}")
-                IO.puts("  Total tokens: #{usage["total_tokens"]}")
+                IO.puts("  Prompt tokens: #{msg.usage.prompt_tokens}")
+                IO.puts("  Completion tokens: #{msg.usage.completion_tokens}")
+                IO.puts("  Total tokens: #{msg.usage.total_tokens}")
               end
             {:error, reason} -> 
               IO.puts("Error: #{inspect(reason)}")

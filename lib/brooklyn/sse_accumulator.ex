@@ -36,7 +36,7 @@ defmodule Brooklyn.SSEAccumulator do
     |> Enum.map(fn
       {:ok, :done} -> {:ok, :stop}
       {:ok, %{"usage" => usage} = _msg} when not is_nil(usage) -> 
-        {:ok, {:usage, usage}}
+        {:ok, {:usage, Brooklyn.Types.Usage.from_map(usage)}}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
       {:ok, %{"choices" => [%{"delta" => delta} | _]}} -> 

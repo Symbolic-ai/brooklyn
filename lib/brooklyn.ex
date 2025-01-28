@@ -41,12 +41,12 @@ defmodule Brooklyn do
       receive_timeout: :infinity
     ) do
       {:ok, %{status: 200, body: %{"choices" => [%{"message" => message} | _], "usage" => usage} = _body}} -> 
-        {:ok, %{
+        {:ok, Brooklyn.Types.Message.new(%{
           role: message["role"],
           content: message["content"],
           reasoning_content: message["reasoning_content"] || "",
           usage: usage
-        }}
+        })}
       error -> 
         {:error, error}
     end
@@ -73,12 +73,12 @@ defmodule Brooklyn do
       into: accumulator
     ) do
       {:ok, %{status: 200} = resp} -> 
-        {:ok, %{
+        {:ok, Brooklyn.Types.Message.new(%{
           role: "assistant",
           content: resp.body.accumulated_content,
           reasoning_content: resp.body.accumulated_reasoning_content,
           usage: resp.body.usage
-        }}
+        })}
       error -> 
         {:error, error}
     end
