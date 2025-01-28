@@ -12,7 +12,7 @@ defmodule Brooklyn.Types.Message do
 
   def changeset(message \\ %__MODULE__{}, attrs) do
     # Handle usage struct in attrs
-    attrs = if is_struct(attrs.usage, Brooklyn.Types.Usage) do
+    attrs = if attrs[:usage] && is_struct(attrs.usage, Brooklyn.Types.Usage) do
       Map.update!(attrs, :usage, &Map.from_struct/1)
     else
       attrs
