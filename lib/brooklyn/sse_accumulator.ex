@@ -35,7 +35,7 @@ defmodule Brooklyn.SSEAccumulator do
     events
     |> Enum.map(fn
       {:ok, :done} -> {:ok, :stop}
-      {:ok, %{"usage" => usage} = msg} when not is_nil(usage) -> 
+      {:ok, %{"usage" => usage} = _msg} when not is_nil(usage) -> 
         {:ok, {:usage, usage}}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
@@ -53,7 +53,7 @@ defmodule Brooklyn.SSEAccumulator do
       {:ok, %{"code" => 400}} -> {:error, :prompt_tokens_exceeded}
       {:ok, %{"code" => 429}} -> {:error, :rate_limit}
       {:ok, unknown} -> {:error, {:unknown_response, unknown}}
-      {:error, msg} -> nil
+      {:error, _msg} -> nil
     end)
     |> Enum.reject(&is_nil/1)
   end
