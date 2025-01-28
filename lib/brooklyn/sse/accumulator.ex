@@ -21,24 +21,26 @@ defmodule Brooklyn.SSE.Accumulator do
         {:ok, {:usage, Brooklyn.Types.Usage.from_map(usage)}}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
       {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
-      {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} -> 
+      {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} ->
         cond do
           String.contains?(content, "<think>") and String.contains?(content, "</think>") ->
             # Complete think tag in one chunk
             {content_parts, reasoning} = extract_think_content(content)
-            {:ok, %{content: content_parts, reasoning_content: reasoning, think_state: :none}}
+            {:ok, Delta.new(content_parts, reasoning)}
           String.contains?(content, "<think>") ->
             # Start of think tag
-            content_before = String.split(content, "<think>") |> hd()
-            {:ok, %{content: content_before, reasoning_content: nil, think_state: :start}}
+            [content_before | _] = String.split(content, "<think>")
+            {:ok, Delta.new(content_before)}
           String.contains?(content, "</think>") ->
             # End of think tag
             [reasoning | rest] = String.split(content, "</think>")
-            {:ok, %{content: Enum.join(rest), reasoning_content: reasoning, think_state: :end}}
+            {:ok, Delta.new(Enum.join(rest), reasoning)}
           true ->
-            # Regular content or within think tags - let accumulator decide based on state
-            {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}
+            # Regular content
+            {:ok, Delta.new(content)}
         end
+      {:ok, %{"usage" => usage}} when not is_nil(usage) ->
+        {:ok, :usage, usage}
       {:ok, %{"choices" => [%{"delta" => _} | _]}} -> 
         nil
       {:ok, %{"code" => 400}} -> {:error, :prompt_tokens_exceeded}

@@ -4,9 +4,12 @@ defmodule Brooklyn.SSE.Parser do
   Specifically handles the OpenAI chat completion streaming format.
   """
 
+  alias Brooklyn.Types.Delta
+
   @type parse_result :: 
     {:ok, :done} |
-    {:ok, map()} |
+    {:ok, Delta.t()} |
+    {:ok, :usage, map()} |
     {:error, :invalid_json} |
     {:error, :invalid_message}
 
