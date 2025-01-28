@@ -76,6 +76,37 @@ defmodule Brooklyn.SSEAccumulator do
       _ -> {content, ""}
     end
   end
+
+  defp handle_content_events(events, current_content, acc) do
+    Enum.reduce(events, {current_content, acc.accumulated_reasoning_content, acc.in_think_tags}, fn
+      {:ok, %{content: content, reasoning_content: reasoning, think_state: :none}}, {c, r, _} when is_binary(content) -> 
+        {c <> content, r <> (reasoning || ""), false}
+      {:ok, %{content: content, reasoning_content: nil, think_state: :start}}, {c, r, _} -> 
+        {c <> content, r, true}
+      {:ok, %{content: content, reasoning_content: reasoning, think_state: :end}}, {c, r, _} -> 
+        {c <> content, r <> reasoning, false}
+      {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}, {c, r, true} -> 
+        {c, r <> content, true}
+      {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}, {c, r, false} -> 
+        {c <> content, r, false}
+      _, acc -> acc
+    end)
+  end
+
+  defp handle_usage_events(events, current_usage) do
+    events
+    |> Enum.filter(fn
+      {:ok, {:usage, _}} -> true
+      _ -> false
+    end)
+    |> case do
+      [] -> current_usage
+      usage_events ->
+        # Take the last usage event
+        {:ok, {:usage, usage}} = List.last(usage_events)
+        usage |> Map.from_struct() |> Map.take([:prompt_tokens, :completion_tokens, :total_tokens])
+    end
+  end
 end
 
 defimpl Collectable, for: Brooklyn.SSEAccumulator do
@@ -85,26 +116,11 @@ defimpl Collectable, for: Brooklyn.SSEAccumulator do
       (%Brooklyn.SSEAccumulator{leftover: leftover, callback: cb, accumulated_content: content} = acc, {:cont, chunk}) ->
         {events, new_leftover} = Brooklyn.SSEAccumulator.process_chunk(chunk, leftover)
 
-        {new_content, new_reasoning_content, new_in_think} = Enum.reduce(events, {content, acc.accumulated_reasoning_content, acc.in_think_tags}, fn
-          {:ok, %{content: content, reasoning_content: reasoning, think_state: :none}}, {c, r, _} when is_binary(content) -> 
-            {c <> content, r <> (reasoning || ""), false}
-          {:ok, %{content: content, reasoning_content: nil, think_state: :start}}, {c, r, _} -> 
-            {c <> content, r, true}
-          {:ok, %{content: content, reasoning_content: reasoning, think_state: :end}}, {c, r, _} -> 
-            {c <> content, r <> reasoning, false}
-          {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}, {c, r, true} -> 
-            {c, r <> content, true}
-          {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}, {c, r, false} -> 
-            {c <> content, r, false}
-          _, acc -> acc
-        end)
+        # First pass: handle content
+        {new_content, new_reasoning_content, new_in_think} = handle_content_events(events, content, acc)
 
-        new_usage = Enum.reduce(events, acc.usage, fn
-          {:ok, {:usage, usage}}, _ -> 
-            # Convert struct to map for later embedding
-            usage |> Map.from_struct() |> Map.take([:prompt_tokens, :completion_tokens, :total_tokens])
-          _, curr_usage -> curr_usage
-        end)
+        # Second pass: handle usage separately
+        new_usage = handle_usage_events(events, acc.usage)
 
         Enum.each(events, cb)
         %{acc | 

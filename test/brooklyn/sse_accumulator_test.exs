@@ -115,5 +115,37 @@ defmodule Brooklyn.SSEAccumulatorTest do
       assert_receive {:callback, {:ok, %{content: "Hello", reasoning_content: nil, think_state: :continue}}}, 100
       assert_receive {:callback, {:ok, :stop}}, 100
     end
+
+    test "handles usage in different message positions" do
+      test_pid = self()
+      callback = fn event -> send(test_pid, {:callback, event}) end
+      
+      # Usage in empty message
+      chunks1 = [
+        "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n",
+        "data: {\"choices\":[{\"delta\":{}}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":1,\"total_tokens\":6}}\n\n"
+      ]
+
+      result1 = Enum.into(chunks1, %SSEAccumulator{callback: callback})
+      assert result1.usage == %{prompt_tokens: 5, completion_tokens: 1, total_tokens: 6}
+      
+      # Usage in stop message
+      chunks2 = [
+        "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n",
+        "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":1,\"total_tokens\":6}}\n\n"
+      ]
+
+      result2 = Enum.into(chunks2, %SSEAccumulator{callback: callback})
+      assert result2.usage == %{prompt_tokens: 5, completion_tokens: 1, total_tokens: 6}
+
+      # Multiple usage events (should take last one)
+      chunks3 = [
+        "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":1,\"total_tokens\":6}}\n\n",
+        "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":5,\"completion_tokens\":2,\"total_tokens\":7}}\n\n"
+      ]
+
+      result3 = Enum.into(chunks3, %SSEAccumulator{callback: callback})
+      assert result3.usage == %{prompt_tokens: 5, completion_tokens: 2, total_tokens: 7}
+    end
   end
 end
