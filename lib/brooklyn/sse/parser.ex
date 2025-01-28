@@ -13,6 +13,21 @@ defmodule Brooklyn.SSE.Parser do
     {:error, :invalid_message}
 
   @doc """
+  Parses a single SSE message.
+
+  ## Examples
+
+      iex> Brooklyn.SSE.Parser.parse_message("data: [DONE]", false)
+      {:ok, :done, false}
+
+      iex> Brooklyn.SSE.Parser.parse_message(~s(data: {"choices":[{"delta":{"content":"Hi"}}]}), false)
+      {:ok, %Brooklyn.Types.Delta{content: "Hi", reasoning_content: nil}, false}
+
+      iex> Brooklyn.SSE.Parser.parse_message("invalid", false)
+      {:error, :invalid_message}
+  """
+
+  @doc """
   Parses a chunk of SSE data, handling any leftover data from previous chunks.
   Returns a tuple of {parsed_events, leftover_data}.
   """

@@ -58,7 +58,7 @@ defmodule Brooklyn.SSE.ParserTest do
 
     test "handles [DONE] message" do
       chunk = "data: [DONE]\n\n"
-      {events, leftover} = Parser.parse_chunk(chunk, "")
+      {events, leftover, _thinking} = Parser.parse_chunk(chunk, "")
       assert leftover == ""
       assert events == [{:ok, :done}]
     end
@@ -78,23 +78,23 @@ defmodule Brooklyn.SSE.ParserTest do
     end
   end
 
-  describe "parse_message/1" do
+  describe "parse_message/2" do
     test "parses valid JSON message" do
       message = "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}"
-      assert Parser.parse_message(message) == 
-        {:ok, %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}}
+      assert Parser.parse_message(message, false) == 
+        {:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false}
     end
 
     test "parses [DONE] message" do
-      assert Parser.parse_message("data: [DONE]") == {:ok, :done}
+      assert Parser.parse_message("data: [DONE]", false) == {:ok, :done, false}
     end
 
     test "handles invalid JSON" do
-      assert Parser.parse_message("data: {invalid}") == {:error, :invalid_json}
+      assert Parser.parse_message("data: {invalid}", false) == {:error, :invalid_json}
     end
 
     test "handles invalid message format" do
-      assert Parser.parse_message("invalid") == {:error, :invalid_message}
+      assert Parser.parse_message("invalid", false) == {:error, :invalid_message}
     end
   end
 end
