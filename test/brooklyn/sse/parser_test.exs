@@ -144,22 +144,30 @@ defmodule Brooklyn.SSE.ParserTest do
   end
 
   describe "parse_message/2" do
-    test "parses valid JSON message" do
+    test "parses message with content" do
       message = "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}"
-      assert Parser.parse_message(message, false) == 
-        {:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false}
+      assert {[{:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false}], false} = 
+        Parser.parse_message(message, false)
+    end
+
+    test "parses message with usage" do
+      message = "data: {\"choices\":[{\"delta\":{\"content\":\"Hi\"}}], \"usage\": {\"total_tokens\": 10}}"
+      assert {[
+        {:ok, {:usage, %{"total_tokens" => 10}}, false},
+        {:ok, %Brooklyn.Types.Delta{content: "Hi", reasoning_content: nil}, false}
+      ], false} = Parser.parse_message(message, false)
     end
 
     test "parses [DONE] message" do
-      assert Parser.parse_message("data: [DONE]", false) == {:ok, :done, false}
+      assert {:ok, :done, false} = Parser.parse_message("data: [DONE]", false)
     end
 
     test "handles invalid JSON" do
-      assert Parser.parse_message("data: {invalid}", false) == {:error, :invalid_json, "data: {invalid}"}
+      assert {:error, :invalid_json, "data: {invalid}"} = Parser.parse_message("data: {invalid}", false)
     end
 
     test "handles invalid message format" do
-      assert Parser.parse_message("invalid", false) == {:error, :invalid_message, "invalid"}
+      assert {:error, :invalid_message, "invalid"} = Parser.parse_message("invalid", false)
     end
   end
 end
