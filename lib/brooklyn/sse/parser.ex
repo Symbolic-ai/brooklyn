@@ -35,11 +35,11 @@ defmodule Brooklyn.SSE.Parser do
   def parse_chunk(chunk, leftover, in_thinking_mode \\ false) do
     full_chunk = leftover <> chunk
     case String.split(full_chunk, "\n\n", parts: 2) do
-      [single] -> {[], single, in_thinking_mode}
+      [single] -> {[], single}
       [message, rest] ->
         {result, new_thinking} = parse_message(message, in_thinking_mode)
-        {more_events, final_leftover, final_thinking} = parse_chunk(rest, "", new_thinking)
-        {[result | more_events], final_leftover, final_thinking}
+        {more_events, final_leftover} = parse_chunk(rest, "", new_thinking)
+        {[result], final_leftover}
     end
   end
 
@@ -48,13 +48,13 @@ defmodule Brooklyn.SSE.Parser do
 
   ## Examples
 
-      iex> Brooklyn.SSE.Parser.parse_message("data: [DONE]")
-      {:ok, :done}
+      iex> Brooklyn.SSE.Parser.parse_message("data: [DONE]", false)
+      {:ok, :done, false}
 
-      iex> Brooklyn.SSE.Parser.parse_message(~s(data: {"choices":[{"delta":{"content":"Hi"}}]}))
-      {:ok, %{"choices" => [%{"delta" => %{"content" => "Hi"}}]}}
+      iex> Brooklyn.SSE.Parser.parse_message(~s(data: {"choices":[{"delta":{"content":"Hi"}}]}), false)
+      {:ok, %Brooklyn.Types.Delta{content: "Hi", reasoning_content: nil}, false}
 
-      iex> Brooklyn.SSE.Parser.parse_message("invalid")
+      iex> Brooklyn.SSE.Parser.parse_message("invalid", false)
       {:error, :invalid_message}
   """
   @spec parse_message(String.t(), boolean()) :: parse_result()

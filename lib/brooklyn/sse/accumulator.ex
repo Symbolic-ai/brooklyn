@@ -1,4 +1,6 @@
 defmodule Brooklyn.SSE.Accumulator do
+  alias Brooklyn.Types.Delta
+
   defstruct [
     :callback,
     :usage,
