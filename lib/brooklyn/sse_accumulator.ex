@@ -73,7 +73,9 @@ defimpl Collectable, for: Brooklyn.SSEAccumulator do
         end)
 
         new_usage = Enum.reduce(events, acc.usage, fn
-          {:ok, {:usage, usage}}, _ -> usage
+          {:ok, {:usage, usage}}, _ -> 
+            # Convert struct to map for later embedding
+            usage |> Map.from_struct() |> Map.take([:prompt_tokens, :completion_tokens, :total_tokens])
           _, curr_usage -> curr_usage
         end)
 

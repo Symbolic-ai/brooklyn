@@ -15,7 +15,7 @@ defmodule Brooklyn.Types.Message do
     |> cast(attrs, [:role, :content, :reasoning_content])
     |> validate_required([:role, :content])
     |> validate_inclusion(:role, ["user", "assistant", "system"])
-    |> cast_embed(:usage, required: false)
+    |> cast_embed(:usage, required: false, with: &Brooklyn.Types.Usage.changeset/2)
   end
 
   def new(attrs) when is_map(attrs) do
