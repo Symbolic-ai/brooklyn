@@ -13,7 +13,7 @@ defmodule Brooklyn.SSE.ParserTest do
 
       """
       
-      {events, leftover, thinking} = Parser.parse_chunk(chunk, "")
+      {events, leftover, thinking} = Parser.parse_chunk(chunk, "") |> dbg()
       assert leftover == ""
       assert thinking == false
       assert events == [
