@@ -27,10 +27,13 @@ defmodule Mix.Tasks.Brooklyn.Test do
         if stream? do
           {provider, model}
           |> Brooklyn.chat_completion(@messages, fn
-            {:ok, %{content: content, reasoning_content: reasoning}} when is_binary(content) or is_binary(reasoning) -> 
-              IO.write("#{reasoning || content}")
-            {:ok, :stop} -> 
+            {:ok, %Brooklyn.Types.Delta{content: content, reasoning_content: reasoning}} -> 
+              if content, do: IO.write(content)
+              if reasoning, do: IO.write(reasoning)
+            {:ok, :done} -> 
               IO.puts("\n--- Stream finished ---")
+            {:ok, %Brooklyn.Types.Usage{} = usage} ->
+              IO.puts("\nUsage update: #{inspect(usage)}")
             other -> 
               IO.puts("\nEvent: #{inspect(other)}")
           end)

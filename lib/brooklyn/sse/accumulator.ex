@@ -17,13 +17,20 @@ defmodule Brooklyn.SSE.Accumulator do
   def process_chunk(%__MODULE__{} = acc, chunk) do
     {events, new_leftover, new_thinking} = Brooklyn.SSE.Parser.parse_chunk(chunk, acc.leftover, acc.thinking)
     
-    # Process all events in order
-    new_acc = Enum.reduce(events, acc, &process_event(&2, &1))
+    # Process all events in order and collect processed events for callback
+    {new_acc, processed_events} = Enum.reduce(events, {acc, []}, fn event, {curr_acc, events_acc} ->
+      case event do
+        {:ok, result, _thinking} -> 
+          {process_event(curr_acc, event), [{:ok, result} | events_acc]}
+        error -> 
+          {curr_acc, [error | events_acc]}
+      end
+    end)
     
-    %{new_acc | 
+    {%{new_acc | 
       leftover: new_leftover,
       thinking: new_thinking
-    }
+    }, Enum.reverse(processed_events)}
   end
 
   defp process_event(acc, {:ok, :done, _thinking}), do: acc
@@ -44,8 +51,10 @@ defimpl Collectable, for: Brooklyn.SSE.Accumulator do
   def into(acc) do
     {acc, fn
       acc, {:cont, chunk} ->
-        new_acc = Brooklyn.SSE.Accumulator.process_chunk(acc, chunk)
-        if new_acc.callback, do: new_acc.callback.(chunk)
+        {new_acc, events} = Brooklyn.SSE.Accumulator.process_chunk(acc, chunk)
+        if new_acc.callback do
+          Enum.each(events, new_acc.callback)
+        end
         new_acc
       acc, :done -> acc
       acc, :halt -> acc
