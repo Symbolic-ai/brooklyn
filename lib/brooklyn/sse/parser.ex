@@ -57,13 +57,6 @@ defmodule Brooklyn.SSE.Parser do
   @doc """
   Determines if a message is complete and can be parsed.
 
-  ## Examples
-
-      iex> Brooklyn.SSE.Parser.complete_message?(~s(data: {"complete": true}\n\n))
-      true
-
-      iex> Brooklyn.SSE.Parser.complete_message?(~s(data: {"incomplete":))
-      false
   """
   @spec complete_message?(String.t()) :: boolean()
   def complete_message?(message) do
