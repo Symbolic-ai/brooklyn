@@ -146,16 +146,14 @@ defmodule Brooklyn.SSE.ParserTest do
   describe "parse_message/2" do
     test "parses message with content" do
       message = "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}"
-      assert {[{:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false}], false} = 
-        Parser.parse_message(message, false)
+      assert Parser.parse_message(message, false) == 
+        {:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false}
     end
 
     test "parses message with usage" do
-      message = "data: {\"choices\":[{\"delta\":{\"content\":\"Hi\"}}], \"usage\": {\"total_tokens\": 10}}"
-      assert {[
-        {:ok, {:usage, %{"total_tokens" => 10}}, false},
-        {:ok, %Brooklyn.Types.Delta{content: "Hi", reasoning_content: nil}, false}
-      ], false} = Parser.parse_message(message, false)
+      message = "data: {\"usage\": {\"total_tokens\": 10}}"
+      assert Parser.parse_message(message, false) ==
+        {:ok, {:usage, %{"total_tokens" => 10}}, false}
     end
 
     test "parses [DONE] message" do

@@ -78,32 +78,19 @@ defmodule Brooklyn.SSE.Parser do
         {:ok, :done, in_thinking_mode}
       "data: " <> data -> 
         case Jason.decode(data) do
-          {:ok, json} -> extract_events(json, in_thinking_mode)
-          {:error, _} -> {:error, :invalid_json, message}
+          {:ok, %{"usage" => usage}} when not is_nil(usage) ->
+            {:ok, {:usage, usage}, in_thinking_mode}
+          {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} ->
+            next_thinking = determine_thinking_state(content, in_thinking_mode)
+            delta = create_delta(content, in_thinking_mode)
+            {:ok, delta, next_thinking}
+          {:error, _} -> 
+            {:error, :invalid_json, message}
         end
       _ -> 
         {:error, :invalid_message, message}
     end
   end
-
-  defp extract_events(json, in_thinking_mode) do
-    events = []
-      |> maybe_add_usage_event(json)
-      |> maybe_add_delta_event(json, in_thinking_mode)
-    {events, in_thinking_mode}
-  end
-
-  defp maybe_add_usage_event(events, %{"usage" => usage}) when not is_nil(usage) do
-    [{:ok, {:usage, usage}, false} | events]
-  end
-  defp maybe_add_usage_event(events, _json), do: events
-
-  defp maybe_add_delta_event(events, %{"choices" => [%{"delta" => %{"content" => content}} | _]}, in_thinking_mode) do
-    next_thinking = determine_thinking_state(content, in_thinking_mode)
-    delta = create_delta(content, in_thinking_mode)
-    [{:ok, delta, next_thinking} | events]
-  end
-  defp maybe_add_delta_event(events, _json, _in_thinking_mode), do: events
 
   defp determine_thinking_state(content, in_thinking_mode) do
     cond do
