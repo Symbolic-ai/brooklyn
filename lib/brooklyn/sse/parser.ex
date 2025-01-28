@@ -9,8 +9,8 @@ defmodule Brooklyn.SSE.Parser do
   @type parse_result :: 
     {:ok, :done, boolean()} |
     {:ok, Delta.t(), boolean()} |
-    {:error, :invalid_json} |
-    {:error, :invalid_message}
+    {:error, :invalid_json, String.t()} |
+    {:error, :invalid_message, String.t()}
 
   @doc """
   Parses a single SSE message.
@@ -24,7 +24,7 @@ defmodule Brooklyn.SSE.Parser do
       {:ok, %Brooklyn.Types.Delta{content: "Hi", reasoning_content: nil}, false}
 
       iex> Brooklyn.SSE.Parser.parse_message("invalid", false)
-      {:error, :invalid_message}
+      {:error, :invalid_message, "invalid"}
   """
 
   @doc """
@@ -93,10 +93,10 @@ defmodule Brooklyn.SSE.Parser do
           {:ok, %{"usage" => usage}} when not is_nil(usage) ->
             {:ok, :usage, usage}
           {:error, _} -> 
-            {:error, :invalid_json}
+            {:error, :invalid_json, message}
         end
       _ -> 
-        {:error, :invalid_message}
+        {:error, :invalid_message, message}
     end
   end
 
