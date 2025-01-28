@@ -9,6 +9,7 @@ defmodule Brooklyn.SSE.Parser do
   @type parse_result :: 
     {:ok, :done, boolean()} |
     {:ok, Delta.t(), boolean()} |
+    {:ok, {:usage, map()}, boolean()} |
     {:error, :invalid_json, String.t()} |
     {:error, :invalid_message, String.t()}
 

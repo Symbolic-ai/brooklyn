@@ -75,8 +75,8 @@ defmodule Brooklyn do
       {:ok, %{status: 200} = resp} -> 
         {:ok, Brooklyn.Types.Message.new(%{
           role: "assistant",
-          content: resp.body.accumulated_content,
-          reasoning_content: resp.body.accumulated_reasoning_content,
+          content: resp.body.content,
+          reasoning_content: resp.body.reasoning_content,
           usage: resp.body.usage
         })}
       error -> 
