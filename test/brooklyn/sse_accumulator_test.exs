@@ -27,14 +27,14 @@ defmodule Brooklyn.SSEAccumulatorTest do
       }
 
       # Assert callbacks were called in order
-      assert_received {:callback, {:ok, %{content: "Hello", reasoning_content: nil, think_state: :continue}}}
-      assert_received {:callback, {:ok, %{content: " world", reasoning_content: nil, think_state: :continue}}}
-      assert_received {:callback, {:ok, {:usage, %Brooklyn.Types.Usage{
+      assert_receive {:callback, {:ok, %{content: "Hello", reasoning_content: nil, think_state: :continue}}}, 100
+      assert_receive {:callback, {:ok, %{content: " world", reasoning_content: nil, think_state: :continue}}}, 100
+      assert_receive {:callback, {:ok, {:usage, %Brooklyn.Types.Usage{
         prompt_tokens: 10,
         completion_tokens: 20,
         total_tokens: 30
-      }}}}
-      assert_received {:callback, {:ok, :stop}}
+      }}}}, 100
+      assert_receive {:callback, {:ok, :stop}}, 100
     end
 
     test "accumulates content with think tags" do
@@ -62,16 +62,16 @@ defmodule Brooklyn.SSEAccumulatorTest do
       }
 
       # Assert callbacks were called in order
-      assert_received {:callback, {:ok, %{content: "Start ", reasoning_content: nil, think_state: :continue}}}
-      assert_received {:callback, {:ok, %{content: "", reasoning_content: nil, think_state: :start}}}
-      assert_received {:callback, {:ok, %{content: "thinking process", reasoning_content: nil, think_state: :continue}}}
-      assert_received {:callback, {:ok, %{content: " end", reasoning_content: "thinking process", think_state: :end}}}
-      assert_received {:callback, {:ok, {:usage, %Brooklyn.Types.Usage{
+      assert_receive {:callback, {:ok, %{content: "Start ", reasoning_content: nil, think_state: :continue}}}, 100
+      assert_receive {:callback, {:ok, %{content: "", reasoning_content: nil, think_state: :start}}}, 100
+      assert_receive {:callback, {:ok, %{content: "thinking process", reasoning_content: nil, think_state: :continue}}}, 100
+      assert_receive {:callback, {:ok, %{content: " end", reasoning_content: "thinking process", think_state: :end}}}, 100
+      assert_receive {:callback, {:ok, {:usage, %Brooklyn.Types.Usage{
         prompt_tokens: 15,
         completion_tokens: 25,
         total_tokens: 40
-      }}}}
-      assert_received {:callback, {:ok, :stop}}
+      }}}}, 100
+      assert_receive {:callback, {:ok, :stop}}, 100
     end
 
     test "handles complete think tag in single chunk" do
@@ -88,13 +88,13 @@ defmodule Brooklyn.SSEAccumulatorTest do
       assert result.accumulated_content == "Before  after"
       assert result.accumulated_reasoning_content == "reasoning"
       
-      assert_received {:callback, {:ok, %{content: "Before  after", reasoning_content: "reasoning", think_state: :none}}}
-      assert_received {:callback, {:ok, {:usage, %Brooklyn.Types.Usage{
+      assert_receive {:callback, {:ok, %{content: "Before  after", reasoning_content: "reasoning", think_state: :none}}}, 100
+      assert_receive {:callback, {:ok, {:usage, %Brooklyn.Types.Usage{
         prompt_tokens: 5,
         completion_tokens: 10,
         total_tokens: 15
-      }}}}
-      assert_received {:callback, {:ok, :stop}}
+      }}}}, 100
+      assert_receive {:callback, {:ok, :stop}}, 100
     end
 
     test "handles incomplete chunks" do
@@ -112,8 +112,8 @@ defmodule Brooklyn.SSEAccumulatorTest do
       assert result.accumulated_content == "Hello"
       assert result.accumulated_reasoning_content == ""
       
-      assert_received {:callback, {:ok, %{content: "Hello", reasoning_content: nil, think_state: :continue}}}
-      assert_received {:callback, {:ok, :stop}}
+      assert_receive {:callback, {:ok, %{content: "Hello", reasoning_content: nil, think_state: :continue}}}, 100
+      assert_receive {:callback, {:ok, :stop}}, 100
     end
   end
 end
