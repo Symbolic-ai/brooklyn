@@ -13,20 +13,6 @@ defmodule Brooklyn.SSE.Parser do
   @doc """
   Parses a chunk of SSE data, handling any leftover data from previous chunks.
   Returns a tuple of {parsed_events, leftover_data}.
-
-  ## Examples
-
-      iex> content_chunk = ~s(data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n)
-      iex> Brooklyn.SSE.Parser.parse_chunk(content_chunk, "")
-      {[{:ok, %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}}], ""}
-
-      iex> done_chunk = "data: [DONE]\\n\\n"
-      iex> Brooklyn.SSE.Parser.parse_chunk(done_chunk, "")
-      {[{:ok, :done}], ""}
-
-      iex> partial_chunk = ~s(data: {"choices":[{"delta":)
-      iex> Brooklyn.SSE.Parser.parse_chunk(partial_chunk, "")
-      {[], ~s(data: {"choices":[{"delta":)}
   """
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
   def parse_chunk(chunk, leftover) do
