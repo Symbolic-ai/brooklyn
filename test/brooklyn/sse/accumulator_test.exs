@@ -6,7 +6,7 @@ defmodule Brooklyn.SSE.AccumulatorTest do
   describe "Collectable implementation" do
     test "accumulates simple content with callbacks" do
       test_pid = self()
-      callback = fn chunk -> send(test_pid, {:callback, chunk}) end
+      callback = fn event -> send(test_pid, {:callback, event}) end
       
       chunks = [
         "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n",
@@ -25,10 +25,15 @@ defmodule Brooklyn.SSE.AccumulatorTest do
         total_tokens: 30
       }
 
-      # Assert callbacks were called for each chunk
-      Enum.each(chunks, fn chunk ->
-        assert_receive {:callback, ^chunk}
-      end)
+      # Assert callbacks were called with processed events
+      assert_receive {:callback, {:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}}}
+      assert_receive {:callback, {:ok, %Brooklyn.Types.Delta{content: " world", reasoning_content: nil}}}
+      assert_receive {:callback, {:ok, %Brooklyn.Types.Usage{
+        prompt_tokens: 10,
+        completion_tokens: 20,
+        total_tokens: 30
+      }}}
+      assert_receive {:callback, {:ok, :done}}
     end
 
     test "accumulates content with think tags" do
