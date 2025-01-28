@@ -90,9 +90,16 @@ defmodule Brooklyn do
     "#{base_url}/chat/completions"
   end
 
-  defp set_stream(request, value) do
+  defp set_stream(request, true) do
     request
     |> Map.drop([:stream, "stream"])
-    |> Map.put(:stream, value)
+    |> Map.put(:stream, true)
+    |> Map.put(:stream_options, %{include_usage: true})
+  end
+
+  defp set_stream(request, false) do
+    request
+    |> Map.drop([:stream, "stream"])
+    |> Map.put(:stream, false)
   end
 end
