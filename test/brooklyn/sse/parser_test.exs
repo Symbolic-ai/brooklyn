@@ -36,9 +36,9 @@ defmodule Brooklyn.SSE.ParserTest do
       assert leftover == ""
       assert thinking == false
       assert events == [
-        {:ok, %Brooklyn.Types.Delta{content: "<think>", reasoning_content: nil}, true},
+        {:ok, %Brooklyn.Types.Delta{content: nil, reasoning_content: "<think>"}, true},
         {:ok, %Brooklyn.Types.Delta{content: nil, reasoning_content: "thinking..."}, true},
-        {:ok, %Brooklyn.Types.Delta{content: "</think>", reasoning_content: nil}, false}
+        {:ok, %Brooklyn.Types.Delta{content: nil, reasoning_content: "</think>"}, false}
       ]
     end
 

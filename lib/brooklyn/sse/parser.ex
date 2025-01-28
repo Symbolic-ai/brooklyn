@@ -83,10 +83,15 @@ defmodule Brooklyn.SSE.Parser do
               true -> in_thinking_mode
             end
             
-            delta = if in_thinking_mode do
+            # If the content contains think tags, it's reasoning content
+            delta = if String.contains?(content, "<think>") or String.contains?(content, "</think>") do
               Delta.new(nil, content)
             else
-              Delta.new(content)
+              if in_thinking_mode do
+                Delta.new(nil, content)
+              else
+                Delta.new(content)
+              end
             end
             
             {:ok, delta, next_thinking}
