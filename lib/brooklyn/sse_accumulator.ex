@@ -70,7 +70,7 @@ defmodule Brooklyn.SSEAccumulator do
   defp extract_think_content(content) do
     parts = String.split(content, ~r/<think>|<\/think>/)
     case parts do
-      [before, thinking, after] -> {before <> after, thinking}
+      [before, thinking, aft] -> {before <> aft, thinking}
       [before, thinking] -> {before, thinking}
       [thinking] -> {"", thinking}
       _ -> {content, ""}
