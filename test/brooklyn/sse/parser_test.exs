@@ -42,11 +42,11 @@ defmodule Brooklyn.SSE.ParserTest do
       ]
     end
 
-    test "handles incomplete messages" do
+    test "handles invalid json as leftover data" do
       chunk1 = "data: {\"choices\":[{\"delta\":"
       {events1, leftover1, thinking1} = Parser.parse_chunk(chunk1, "")
       assert events1 == []
-      assert leftover1 == chunk1
+      assert leftover1 == "data: {\"choices\":[{\"delta\":"
       assert thinking1 == false
 
       chunk2 = "{\"content\":\"Hello\"}}]}\n\n"

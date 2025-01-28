@@ -45,13 +45,12 @@ defmodule Brooklyn.SSE.Parser do
     end)
     events = Enum.reverse(events)
 
-    # Second pass: check last message and handle leftover
-    last_message = List.last(messages)
-
-    # If we have no events but a last message, it's probably incomplete
-    cond do
-      events == [] and last_message != "" -> {[], last_message, in_thinking_mode}
-      true -> {events, "", final_thinking}
+    # Check if last message was an error and use its content as leftover
+    case List.last(events) do
+      {:error, :invalid_json, msg} -> 
+        {Enum.reject(Enum.drop(events, -1), &match?({:error, _, _}, &1)), msg, final_thinking}
+      _ -> 
+        {Enum.reject(events, &match?({:error, _, _}, &1)), "", final_thinking}
     end
   end
 
