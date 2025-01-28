@@ -4,7 +4,7 @@ defmodule Brooklyn.SSE.Parser do
   Specifically handles the OpenAI chat completion streaming format.
   """
 
-  alias Brooklyn.Types.Delta
+  alias Brooklyn.Types.{Delta, Usage}
 
   @type parse_result :: 
     {:ok, :done, boolean()} |
@@ -80,7 +80,7 @@ defmodule Brooklyn.SSE.Parser do
       "data: " <> data -> 
         case Jason.decode(data) do
           {:ok, %{"usage" => usage}} when not is_nil(usage) ->
-            {:ok, {:usage, usage}, in_thinking_mode}
+            {:ok, Usage.from_map(usage), in_thinking_mode}
           {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} ->
             next_thinking = determine_thinking_state(content, in_thinking_mode)
             delta = create_delta(content, in_thinking_mode)

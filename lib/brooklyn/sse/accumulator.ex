@@ -28,8 +28,8 @@ defmodule Brooklyn.SSE.Accumulator do
 
   defp process_event(acc, {:ok, :done, _thinking}), do: acc
   
-  defp process_event(acc, {:ok, {:usage, usage}, _thinking}) do
-    %{acc | usage: Usage.from_map(usage)}
+  defp process_event(acc, {:ok, %Usage{} = usage, _thinking}) do
+    %{acc | usage: usage}
   end
   
   defp process_event(acc, {:ok, %Delta{content: content, reasoning_content: reasoning}, _thinking}) do
