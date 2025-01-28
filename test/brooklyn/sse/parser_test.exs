@@ -67,14 +67,14 @@ defmodule Brooklyn.SSE.ParserTest do
       chunk = "data: {invalid_json}\n\n"
       {events, leftover} = Parser.parse_chunk(chunk, "")
       assert leftover == ""
-      assert events == [{:error, :invalid_json}]
+      assert events == [{:error, :invalid_json, "data: {invalid_json}"}]
     end
 
     test "handles invalid message format" do
       chunk = "invalid: message\n\n"
       {events, leftover} = Parser.parse_chunk(chunk, "")
       assert leftover == ""
-      assert events == [{:error, :invalid_message}]
+      assert events == [{:error, :invalid_message, "invalid: message"}]
     end
   end
 
@@ -90,11 +90,11 @@ defmodule Brooklyn.SSE.ParserTest do
     end
 
     test "handles invalid JSON" do
-      assert Parser.parse_message("data: {invalid}", false) == {:error, :invalid_json}
+      assert Parser.parse_message("data: {invalid}", false) == {:error, :invalid_json, "data: {invalid}"}
     end
 
     test "handles invalid message format" do
-      assert Parser.parse_message("invalid", false) == {:error, :invalid_message}
+      assert Parser.parse_message("invalid", false) == {:error, :invalid_message, "invalid"}
     end
   end
 end
