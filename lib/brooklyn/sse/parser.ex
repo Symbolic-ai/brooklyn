@@ -51,9 +51,11 @@ defmodule Brooklyn.SSE.Parser do
       "data: " <> data ->
         case Jason.decode(data) do
           {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} ->
-            next_thinking = if String.contains?(content, "<think>"), do: true,
-                           else if String.contains?(content, "</think>"), do: false,
-                           else: in_thinking_mode
+            next_thinking = cond do
+              String.contains?(content, "<think>") -> true
+              String.contains?(content, "</think>") -> false
+              true -> in_thinking_mode
+            end
             
             delta = if in_thinking_mode do
               Delta.new(nil, content)
@@ -62,6 +64,8 @@ defmodule Brooklyn.SSE.Parser do
             end
             
             {:ok, delta, next_thinking}
+          {:ok, %{"usage" => usage}} when not is_nil(usage) ->
+            {:ok, :usage, usage}
           {:error, _} -> 
             {:error, :invalid_json}
         end
