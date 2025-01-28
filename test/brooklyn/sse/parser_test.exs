@@ -13,11 +13,32 @@ defmodule Brooklyn.SSE.ParserTest do
 
       """
       
-      {events, leftover} = Parser.parse_chunk(chunk, "")
+      {events, leftover, thinking} = Parser.parse_chunk(chunk, "")
       assert leftover == ""
+      assert thinking == false
       assert events == [
-        {:ok, %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}},
-        {:ok, %{"choices" => [%{"delta" => %{"content" => " World"}}]}}
+        {:ok, %Brooklyn.Types.Delta{content: "Hello", reasoning_content: nil}, false},
+        {:ok, %Brooklyn.Types.Delta{content: " World", reasoning_content: nil}, false}
+      ]
+    end
+
+    test "handles thinking mode" do
+      chunk = """
+      data: {"choices":[{"delta":{"content":"<think>"}}]}
+
+      data: {"choices":[{"delta":{"content":"thinking..."}}]}
+
+      data: {"choices":[{"delta":{"content":"</think>"}}]}
+
+      """
+      
+      {events, leftover, thinking} = Parser.parse_chunk(chunk, "")
+      assert leftover == ""
+      assert thinking == false
+      assert events == [
+        {:ok, %Brooklyn.Types.Delta{content: "<think>", reasoning_content: nil}, true},
+        {:ok, %Brooklyn.Types.Delta{content: nil, reasoning_content: "thinking..."}, true},
+        {:ok, %Brooklyn.Types.Delta{content: "</think>", reasoning_content: nil}, false}
       ]
     end
 

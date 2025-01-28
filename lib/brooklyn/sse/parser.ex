@@ -7,8 +7,8 @@ defmodule Brooklyn.SSE.Parser do
   alias Brooklyn.Types.Delta
 
   @type parse_result :: 
-    {:ok, :done} |
-    {:ok, Delta.t()} |
+    {:ok, :done, boolean()} |
+    {:ok, Delta.t(), boolean()} |
     {:ok, :usage, map()} |
     {:error, :invalid_json} |
     {:error, :invalid_message}
@@ -18,13 +18,14 @@ defmodule Brooklyn.SSE.Parser do
   Returns a tuple of {parsed_events, leftover_data}.
   """
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
-  def parse_chunk(chunk, leftover) do
+  def parse_chunk(chunk, leftover, in_thinking_mode \\ false) do
     full_chunk = leftover <> chunk
     case String.split(full_chunk, "\n\n", parts: 2) do
-      [single] -> {[], single}
+      [single] -> {[], single, in_thinking_mode}
       [message, rest] ->
-        {more_events, final_leftover} = parse_chunk(rest, "")
-        {[parse_message(message) | more_events], final_leftover}
+        {result, new_thinking} = parse_message(message, in_thinking_mode)
+        {more_events, final_leftover, final_thinking} = parse_chunk(rest, "", new_thinking)
+        {[result | more_events], final_leftover, final_thinking}
     end
   end
 
@@ -42,15 +43,27 @@ defmodule Brooklyn.SSE.Parser do
       iex> Brooklyn.SSE.Parser.parse_message("invalid")
       {:error, :invalid_message}
   """
-  @spec parse_message(String.t()) :: parse_result()
-  def parse_message(message) do
+  @spec parse_message(String.t(), boolean()) :: parse_result()
+  def parse_message(message, in_thinking_mode) do
     case String.trim(message) do
       "data: [DONE]" -> 
-        {:ok, :done}
+        {:ok, :done, in_thinking_mode}
       "data: " <> data ->
         case Jason.decode(data) do
-          {:ok, parsed} -> {:ok, parsed}
-          {:error, _} -> {:error, :invalid_json}
+          {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} ->
+            next_thinking = if String.contains?(content, "<think>"), do: true,
+                           else if String.contains?(content, "</think>"), do: false,
+                           else: in_thinking_mode
+            
+            delta = if in_thinking_mode do
+              Delta.new(nil, content)
+            else
+              Delta.new(content)
+            end
+            
+            {:ok, delta, next_thinking}
+          {:error, _} -> 
+            {:error, :invalid_json}
         end
       _ -> 
         {:error, :invalid_message}
