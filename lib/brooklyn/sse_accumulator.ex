@@ -77,7 +77,7 @@ defmodule Brooklyn.SSEAccumulator do
     end
   end
 
-  defp handle_content_events(events, current_content, acc) do
+  def handle_content_events(events, current_content, acc) do
     Enum.reduce(events, {current_content, acc.accumulated_reasoning_content, acc.in_think_tags}, fn
       {:ok, %{content: content, reasoning_content: reasoning, think_state: :none}}, {c, r, _} when is_binary(content) -> 
         {c <> content, r <> (reasoning || ""), false}
@@ -93,7 +93,7 @@ defmodule Brooklyn.SSEAccumulator do
     end)
   end
 
-  defp handle_usage_events(events, current_usage) do
+  def handle_usage_events(events, current_usage) do
     events
     |> Enum.filter(fn
       {:ok, {:usage, _}} -> true
@@ -110,6 +110,12 @@ defmodule Brooklyn.SSEAccumulator do
 end
 
 defimpl Collectable, for: Brooklyn.SSEAccumulator do
+  import Brooklyn.SSEAccumulator, only: [
+    process_chunk: 2,
+    handle_content_events: 3,
+    handle_usage_events: 2
+  ]
+
   def into(%Brooklyn.SSEAccumulator{} = acc) do
     initial_state = acc
     collection_fn = fn
