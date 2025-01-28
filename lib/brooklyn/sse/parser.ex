@@ -38,8 +38,10 @@ defmodule Brooklyn.SSE.Parser do
     
     # First pass: parse all messages
     {events, final_thinking} = Enum.reduce(messages, {[], in_thinking_mode}, fn message, {acc, thinking} ->
-      {result, new_thinking} = parse_message(message, thinking)
-      {[result | acc], new_thinking}
+      case parse_message(message, thinking) do
+        {status, result, new_thinking} -> {[{status, result} | acc], new_thinking}
+        {:error, _reason} = error -> {[error | acc], thinking}
+      end
     end)
     events = Enum.reverse(events)
 
