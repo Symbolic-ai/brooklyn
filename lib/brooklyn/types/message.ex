@@ -11,6 +11,13 @@ defmodule Brooklyn.Types.Message do
   end
 
   def changeset(message \\ %__MODULE__{}, attrs) do
+    # Handle usage struct in attrs
+    attrs = if is_struct(attrs.usage, Brooklyn.Types.Usage) do
+      Map.update!(attrs, :usage, &Map.from_struct/1)
+    else
+      attrs
+    end
+
     message
     |> cast(attrs, [:role, :content, :reasoning_content])
     |> validate_required([:role, :content])
