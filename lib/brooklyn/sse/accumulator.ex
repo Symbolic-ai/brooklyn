@@ -11,69 +11,29 @@ defmodule Brooklyn.SSE.Accumulator do
   ]
 
   def process_chunk(chunk, leftover) do
-    {parsed, new_leftover} = Brooklyn.SSE.Parser.parse_chunk(chunk, leftover)
-    {process_events(parsed), new_leftover}
+    {events, new_leftover, thinking} = Brooklyn.SSE.Parser.parse_chunk(chunk, leftover)
+    {process_events(events), new_leftover, thinking}
   end
 
   defp process_events(events) do
     events
     |> Enum.map(fn
-      {:ok, :done} -> {:ok, :stop}
-      {:ok, %{"usage" => usage} = _msg} when not is_nil(usage) -> 
-        {:ok, {:usage, Brooklyn.Types.Usage.from_map(usage)}}
-      {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "stop"} | _]}} -> {:ok, :stop}
-      {:ok, %{"choices" => [%{"delta" => %{}, "finish_reason" => "length"}]}} -> {:ok, :completion_max_tokens_reached}
-      {:ok, %{"choices" => [%{"delta" => %{"content" => content}} | _]}} ->
-        cond do
-          String.contains?(content, "<think>") and String.contains?(content, "</think>") ->
-            # Complete think tag in one chunk
-            {content_parts, reasoning} = extract_think_content(content)
-            {:ok, Delta.new(content_parts, reasoning)}
-          String.contains?(content, "<think>") ->
-            # Start of think tag
-            [content_before | _] = String.split(content, "<think>")
-            {:ok, Delta.new(content_before)}
-          String.contains?(content, "</think>") ->
-            # End of think tag
-            [reasoning | rest] = String.split(content, "</think>")
-            {:ok, Delta.new(Enum.join(rest), reasoning)}
-          true ->
-            # Regular content
-            {:ok, Delta.new(content)}
-        end
-      {:ok, %{"usage" => usage}} when not is_nil(usage) ->
-        {:ok, :usage, usage}
-      {:ok, %{"choices" => [%{"delta" => _} | _]}} -> 
-        nil
-      {:ok, %{"code" => 400}} -> {:error, :prompt_tokens_exceeded}
-      {:ok, %{"code" => 429}} -> {:error, :rate_limit}
-      {:ok, unknown} -> {:error, {:unknown_response, unknown}}
-      {:error, _msg} -> nil
+      {:ok, :done, _thinking} -> {:ok, :stop}
+      {:ok, :usage, usage} -> {:ok, {:usage, Brooklyn.Types.Usage.from_map(usage)}}
+      {:ok, delta, _thinking} -> {:ok, delta}
+      {:error, _reason, _msg} -> nil
     end)
     |> Enum.reject(&is_nil/1)
-  end
-  defp extract_think_content(content) do
-    parts = String.split(content, ~r/<think>|<\/think>/)
-    case parts do
-      [before, thinking, aft] -> {before <> aft, thinking}
-      [before, thinking] -> {before, thinking}
-      [thinking] -> {"", thinking}
-      _ -> {content, ""}
-    end
   end
 
   def handle_content_events(events, current_content, acc) do
     Enum.reduce(events, {current_content, acc.accumulated_reasoning_content, acc.in_think_tags}, fn
-      {:ok, %{content: content, reasoning_content: reasoning, think_state: :none}}, {c, r, _} when is_binary(content) -> 
-        {c <> content, r <> (reasoning || ""), false}
-      {:ok, %{content: content, reasoning_content: nil, think_state: :start}}, {c, r, _} -> 
-        {c <> content, r, true}
-      {:ok, %{content: content, reasoning_content: reasoning, think_state: :end}}, {c, r, _} -> 
-        {c <> content, r <> reasoning, false}
-      {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}, {c, r, true} -> 
-        {c, r <> content, true}
-      {:ok, %{content: content, reasoning_content: nil, think_state: :continue}}, {c, r, false} -> 
-        {c <> content, r, false}
+      {:ok, %Brooklyn.Types.Delta{content: content, reasoning_content: reasoning}}, {c, r, t} ->
+        {
+          c <> (content || ""),
+          r <> (reasoning || ""),
+          t
+        }
       _, acc -> acc
     end)
   end
