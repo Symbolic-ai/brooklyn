@@ -81,6 +81,15 @@ defmodule Brooklyn.SSE.AccumulatorTest do
         total_tokens: 6
       }
 
+      # Verify we can create a Message from the accumulator result
+      message = Brooklyn.Types.Message.new(%{
+        role: "assistant",
+        content: result1.content,
+        reasoning_content: result1.reasoning_content,
+        usage: result1.usage
+      })
+      assert message.usage == result1.usage
+
       # Multiple usage events (should take last one)
       chunks2 = [
         "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\n\n",
@@ -95,6 +104,15 @@ defmodule Brooklyn.SSE.AccumulatorTest do
         completion_tokens: 2,
         total_tokens: 7
       }
+
+      # Verify we can create a Message from the accumulator result
+      message2 = Brooklyn.Types.Message.new(%{
+        role: "assistant",
+        content: result2.content,
+        reasoning_content: result2.reasoning_content,
+        usage: result2.usage
+      })
+      assert message2.usage == result2.usage
     end
   end
 end
