@@ -96,11 +96,11 @@ defimpl Collectable, for: Brooklyn.SSE.Accumulator do
     handle_usage_events: 2
   ]
 
-  def into(%Brooklyn.SSEAccumulator{} = acc) do
+  def into(%Brooklyn.SSE.Accumulator{} = acc) do
     initial_state = acc
     collection_fn = fn
-      (%Brooklyn.SSEAccumulator{leftover: leftover, callback: cb, accumulated_content: content} = acc, {:cont, chunk}) ->
-        {events, new_leftover} = Brooklyn.SSEAccumulator.process_chunk(chunk, leftover)
+      (%Brooklyn.SSE.Accumulator{leftover: leftover, callback: cb, accumulated_content: content} = acc, {:cont, chunk}) ->
+        {events, new_leftover} = Brooklyn.SSE.Accumulator.process_chunk(chunk, leftover)
 
         # First pass: handle content
         {new_content, new_reasoning_content, new_in_think} = handle_content_events(events, content, acc)
