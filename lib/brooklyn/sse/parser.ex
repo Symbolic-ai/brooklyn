@@ -16,16 +16,16 @@ defmodule Brooklyn.SSE.Parser do
 
   ## Examples
 
-      iex> chunk1 = ~s(data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n)
-      iex> Brooklyn.SSE.Parser.parse_chunk(chunk1, "")
+      iex> content_chunk = ~s(data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n)
+      iex> Brooklyn.SSE.Parser.parse_chunk(content_chunk, "")
       {[{:ok, %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}}], ""}
 
-      iex> chunk2 = "data: [DONE]\\n\\n"
-      iex> Brooklyn.SSE.Parser.parse_chunk(chunk2, "")
+      iex> done_chunk = "data: [DONE]\\n\\n"
+      iex> Brooklyn.SSE.Parser.parse_chunk(done_chunk, "")
       {[{:ok, :done}], ""}
 
-      iex> chunk3 = ~s(data: {"choices":[{"delta":)
-      iex> Brooklyn.SSE.Parser.parse_chunk(chunk3, "")
+      iex> partial_chunk = ~s(data: {"choices":[{"delta":)
+      iex> Brooklyn.SSE.Parser.parse_chunk(partial_chunk, "")
       {[], ~s(data: {"choices":[{"delta":)}
   """
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
