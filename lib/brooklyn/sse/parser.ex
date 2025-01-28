@@ -16,17 +16,17 @@ defmodule Brooklyn.SSE.Parser do
 
   ## Examples
 
-      iex> chunk = "data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}\\n\\n"
+      iex> chunk = ~s(data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n)
       iex> Brooklyn.SSE.Parser.parse_chunk(chunk, "")
-      {[ok: %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}], ""}
+      {[{:ok, %{"choices" => [%{"delta" => %{"content" => "Hello"}}]}}], ""}
 
       iex> chunk = "data: [DONE]\\n\\n"
       iex> Brooklyn.SSE.Parser.parse_chunk(chunk, "")
-      {[ok: :done], ""}
+      {[{:ok, :done}], ""}
 
-      iex> chunk = "data: {\"choices\":[{\"delta\":"
+      iex> chunk = ~s(data: {"choices":[{"delta":)
       iex> Brooklyn.SSE.Parser.parse_chunk(chunk, "")
-      {[], "data: {\"choices\":[{\"delta\":"}
+      {[], ~s(data: {"choices":[{"delta":))}
   """
   @spec parse_chunk(String.t(), String.t()) :: {[parse_result()], String.t()}
   def parse_chunk(chunk, leftover) do
@@ -44,7 +44,7 @@ defmodule Brooklyn.SSE.Parser do
       iex> Brooklyn.SSE.Parser.parse_message("data: [DONE]")
       {:ok, :done}
 
-      iex> Brooklyn.SSE.Parser.parse_message("data: {\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}")
+      iex> Brooklyn.SSE.Parser.parse_message(~s(data: {"choices":[{"delta":{"content":"Hi"}}]}))
       {:ok, %{"choices" => [%{"delta" => %{"content" => "Hi"}}]}}
 
       iex> Brooklyn.SSE.Parser.parse_message("invalid")
@@ -70,10 +70,10 @@ defmodule Brooklyn.SSE.Parser do
 
   ## Examples
 
-      iex> Brooklyn.SSE.Parser.complete_message?("data: {\"complete\": true}\\n\\n")
+      iex> Brooklyn.SSE.Parser.complete_message?(~s(data: {"complete": true}\n\n))
       true
 
-      iex> Brooklyn.SSE.Parser.complete_message?("data: {\"incomplete\":")
+      iex> Brooklyn.SSE.Parser.complete_message?(~s(data: {"incomplete":))
       false
   """
   @spec complete_message?(String.t()) :: boolean()
